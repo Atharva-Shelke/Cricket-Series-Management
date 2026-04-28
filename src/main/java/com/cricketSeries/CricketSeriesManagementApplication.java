@@ -1,4 +1,4 @@
-package com.Cricket;
+package com.cricketSeries;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
