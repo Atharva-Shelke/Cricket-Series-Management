@@ -1,7 +1,7 @@
 package com.cricketSeries.dao;
 
-import java.sql.Date;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -10,7 +10,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import com.cricketSeries.model.Match;
+import com.cricketSeries.dto.SeriesRequestDTO;
 import com.cricketSeries.model.Series;
 import com.cricketSeries.utility.SqlLoader;
 
@@ -23,7 +23,7 @@ public class SeriesDAO {
 	@Autowired
 	private SqlLoader sql;
 
-	public Long insertSeries(Series series) {
+	public Long insertSeries(SeriesRequestDTO series) {
 		String query = sql.get("insert_series");
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("name", series.getName())
@@ -37,44 +37,54 @@ public class SeriesDAO {
 		return keyHolder.getKey().longValue();
 	}
 
-	public Long insertMatch(Long seriesId, Match match) {
-		String query = sql.get("insert_match");
-
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("series_id", seriesId)
-				.addValue("team_a", match.getTeamA()).addValue("team_b", match.getTeamB())
-				.addValue("match_date", Date.valueOf(match.getMatchDate())).addValue("venue", match.getVenue())
-				.addValue("match_type", match.getMatchType());
-
-		KeyHolder keyHolder = new GeneratedKeyHolder();
-
-		jdbcTemplate.update(query, params, keyHolder, new String[] { "id" });
-
-		return keyHolder.getKey().longValue();
+	public List<Series> getAllSeries() {
+		return jdbcTemplate.query(sql.get("get_all_series"), (rs, rowNum) -> {
+			Series series = new Series();
+			series.setId(rs.getLong("id"));
+			series.setName(rs.getString("name"));
+			series.setLocation(rs.getString("location"));
+			series.setStartDate((LocalDate) rs.getObject("start_date"));
+			series.setEndDate((LocalDate) rs.getObject("end_date"));
+			return series;
+		});
 
 	}
-//
-//    public List<String> getAllSeriesJson() {
-//        return jdbcTemplate.query(sql.get("get_all_series"),
-//                (rs, rowNum) -> rs.getString("json_agg"));
-//    }
 
-	public String getSeriesById(Long id) {
-		Map<String, Object> params = Map.of("id", id);
+	public Series getSeriesById(Long id) {
+		try {
+			MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", id);
 
-		return jdbcTemplate.queryForObject(sql.get("get_series_by_id"), params, String.class);
+			return jdbcTemplate.queryForObject(sql.get("get_series_by_id"), params, (rs, rowNum) -> {
+				Series series = new Series();
+				series.setName(rs.getString("name"));
+				series.setLocation(rs.getString("location"));
+				series.setStartDate((LocalDate) rs.getObject("start_date"));
+				series.setEndDate((LocalDate) rs.getObject("end_date"));
+				return series;
+			});
+		} catch (RuntimeException ex) {
+			throw new RuntimeException("Series not found with id: " + id);
+		}
 	}
-//
-//    public void deleteSeries(Long id) {
-//        jdbcTemplate.update(sql.get("delete_series"), id);
-//    }
-//
-//    public void updateSeries(Series series) {
-//        jdbcTemplate.update(sql.get("update_series"),
-//                series.getName(),
-//                series.getLocation(),
-//                Date.valueOf(series.getStartDate()),
-//                Date.valueOf(series.getEndDate()),
-//                series.getId()
-//        );
-//    }
+
+	public void deleteSeries(Long id) {
+		try {
+			MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", id);
+			jdbcTemplate.update(sql.get("delete_series"), params);
+		} catch (RuntimeException ex) {
+			throw new RuntimeException("Series not found with id: " + id);
+		}
+	}
+
+	public void updateSeries(Series series) {
+		try {
+			MapSqlParameterSource params = new MapSqlParameterSource().addValue("name", series.getName())
+					.addValue("location", series.getLocation()).addValue("startDate", series.getStartDate())
+					.addValue("endDate", series.getEndDate()).addValue("id", series.getId());
+
+			jdbcTemplate.update(sql.get("update_series"), params);
+		} catch (RuntimeException ex) {
+			throw new RuntimeException("Series not found with id: " + series.getId());
+		}
+	}
 }
