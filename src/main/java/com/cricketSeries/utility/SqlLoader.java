@@ -14,7 +14,7 @@ public class SqlLoader {
     private final Map<String, String> queries = new HashMap<>();
 
     public SqlLoader() throws IOException {
-        loadSql("sql/series.sql");
+        loadSql("sql/cricketSeries.sql");
     }
 
     private void loadSql(String path) throws IOException {
