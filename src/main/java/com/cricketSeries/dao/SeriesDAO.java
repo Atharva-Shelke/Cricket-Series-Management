@@ -11,6 +11,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.cricketSeries.dto.SeriesRequestDTO;
+import com.cricketSeries.dto.SeriesResponseDTO;
 import com.cricketSeries.model.Series;
 import com.cricketSeries.utility.SqlLoader;
 
@@ -43,23 +44,24 @@ public class SeriesDAO {
 			series.setId(rs.getLong("id"));
 			series.setName(rs.getString("name"));
 			series.setLocation(rs.getString("location"));
-			series.setStartDate((LocalDate) rs.getObject("start_date"));
-			series.setEndDate((LocalDate) rs.getObject("end_date"));
+			series.setStartDate(rs.getDate("start_date").toLocalDate());
+			series.setEndDate(rs.getDate("end_date").toLocalDate());
 			return series;
 		});
 
 	}
 
-	public Series getSeriesById(Long id) {
+	public SeriesResponseDTO getSeriesById(Long id) {
 		try {
 			MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", id);
 
 			return jdbcTemplate.queryForObject(sql.get("get_series_by_id"), params, (rs, rowNum) -> {
-				Series series = new Series();
+				SeriesResponseDTO series = new SeriesResponseDTO();
+				series.setId(rs.getLong("id"));
 				series.setName(rs.getString("name"));
 				series.setLocation(rs.getString("location"));
-				series.setStartDate((LocalDate) rs.getObject("start_date"));
-				series.setEndDate((LocalDate) rs.getObject("end_date"));
+				series.setStartDate(rs.getDate("start_date").toLocalDate());
+				series.setEndDate(rs.getDate("end_date").toLocalDate());
 				return series;
 			});
 		} catch (RuntimeException ex) {
@@ -70,7 +72,7 @@ public class SeriesDAO {
 	public void deleteSeries(Long id) {
 		try {
 			MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", id);
-			jdbcTemplate.update(sql.get("delete_series"), params);
+			System.out.println(jdbcTemplate.update(sql.get("delete_series"), params));
 		} catch (RuntimeException ex) {
 			throw new RuntimeException("Series not found with id: " + id);
 		}
@@ -82,7 +84,7 @@ public class SeriesDAO {
 					.addValue("location", series.getLocation()).addValue("startDate", series.getStartDate())
 					.addValue("endDate", series.getEndDate()).addValue("id", series.getId());
 
-			jdbcTemplate.update(sql.get("update_series"), params);
+			System.out.println(jdbcTemplate.update(sql.get("update_series"), params));
 		} catch (RuntimeException ex) {
 			throw new RuntimeException("Series not found with id: " + series.getId());
 		}
