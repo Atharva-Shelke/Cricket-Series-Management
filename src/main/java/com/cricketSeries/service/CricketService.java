@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.cricketSeries.dao.MatchDAO;
 import com.cricketSeries.dao.SeriesDAO;
@@ -24,16 +27,20 @@ public class CricketService {
 	@Autowired
 	private MatchDAO matchDao;
 
-	public void createSeries(SeriesRequestDTO seriesReq) {
+	@Transactional
+	public long createSeries(SeriesRequestDTO seriesReq) {
 		Series series = new Series();
 		series.setName(seriesReq.getName());
 		series.setLocation(seriesReq.getLocation());
 		series.setStartDate(seriesReq.getStartDate());
 		series.setEndDate(seriesReq.getEndDate());
 
-		Long id = seriesDao.insertSeries(series);
+		Long seriesId = seriesDao.insertSeries(series);
 
-		if (id != null) {
+		if (seriesId == null || seriesId == 0) {
+		}
+
+		if (seriesReq.getMatches() != null) {
 
 			for (MatchRequestDTO m : seriesReq.getMatches()) {
 				Match match = new Match();
@@ -42,61 +49,47 @@ public class CricketService {
 				match.setMatchDate(m.getMatchDate());
 				match.setVenue(m.getVenue());
 				match.setMatchType(m.getMatchType());
-				matchDao.insertMatch(id, match);
+				matchDao.insertMatch(seriesId, match);
 			}
-		} else {
-			throw new RuntimeException("Series not created: Generated id is null.");
 		}
+
+		return seriesId;
 
 	}
 
-	public List<SeriesResponseDTO> getAllSeries() {
+	public List<SeriesResponseDTO> getAllSeries(boolean includeMatches) {
+
+		if (includeMatches) {
+			return seriesDao.getAllSeriesWithMatches();
+		}
 
 		List<SeriesResponseDTO> seriesRspList = new ArrayList<>();
 
 		for (Series series : seriesDao.getAllSeries()) {
-			SeriesResponseDTO seriesRsp = new SeriesResponseDTO();
-			seriesRsp.setId(series.getId());
-			seriesRsp.setName(series.getName());
-			seriesRsp.setLocation(series.getLocation());
-			seriesRsp.setStartDate(series.getStartDate());
-			seriesRsp.setEndDate(series.getEndDate());
-
-			seriesRspList.add(seriesRsp);
+			seriesRspList.add(map(series));
 		}
 		return seriesRspList;
 	}
 
-	public List<SeriesResponseDTO> getAllSeriesWithMatches() {
-		return seriesDao.getAllSeriesWithMatches();
+	public SeriesResponseDTO getSeriesById(long seriesId, boolean includeMatches) {
+		if (includeMatches) {
+			return seriesDao.getSeriesByIdWithMatches(seriesId);
+		}
+		Series series = seriesDao.getSeriesById(seriesId);
+		return map(series);
 	}
 
-	public SeriesResponseDTO getSeriesById(Long id) {
-		Series series = seriesDao.getSeriesById(id);
-		SeriesResponseDTO seriesRsp = new SeriesResponseDTO();
-		seriesRsp.setId(series.getId());
-		seriesRsp.setName(series.getName());
-		seriesRsp.setLocation(series.getLocation());
-		seriesRsp.setStartDate(series.getStartDate());
-		seriesRsp.setEndDate(series.getEndDate());
-		return seriesRsp;
-	}
-
-	public SeriesResponseDTO getSeriesByIdWithMatches(Long id) {
-		return seriesDao.getSeriesByIdWithMatches(id);
-	}
-
-	public void deleteSeries(Long id) {
-		int rows = seriesDao.deleteSeries(id);
+	public void deleteSeries(long seriesId) {
+		int rows = seriesDao.deleteSeries(seriesId);
 
 		if (rows == 0) {
-			throw new RuntimeException("Series not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Series not found");
 		}
 	}
 
-	public void updateSeries(Long id, SeriesRequestDTO seriesReq) {
+	public void updateSeries(long seriesId, SeriesRequestDTO seriesReq) {
 		Series series = new Series();
-		series.setId(id);
+		series.setId(seriesId);
 		series.setName(seriesReq.getName());
 		series.setLocation(seriesReq.getLocation());
 		series.setStartDate(seriesReq.getStartDate());
@@ -105,12 +98,12 @@ public class CricketService {
 		int rows = seriesDao.updateSeries(series);
 
 		if (rows == 0) {
-			throw new RuntimeException("Series not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Series not found");
 		}
 
 	}
 
-	public void createMatch(Long seriesId, MatchRequestDTO matchReq) {
+	public void createMatch(long seriesId, MatchRequestDTO matchReq) {
 		Match match = new Match();
 		match.setTeamA(matchReq.getTeamA());
 		match.setTeamB(matchReq.getTeamB());
@@ -120,28 +113,59 @@ public class CricketService {
 		int rows = matchDao.insertMatch(seriesId, match);
 
 		if (rows == 0) {
-			throw new RuntimeException("Match not inserted.");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Match not inserted.");
 		}
 	}
 
-	public List<MatchResponseDTO> getAllMatchesBySeriesId(Long id) {
+	public List<MatchResponseDTO> getMatchesBySeriesId(long seriesId) {
 		List<MatchResponseDTO> matches = new ArrayList<>();
-		for (Match m : matchDao.getAllMatchesBySeriesId(id)) {
-			MatchResponseDTO match = new MatchResponseDTO();
-			match.setId(m.getId());
-			match.setTeamA(m.getTeamA());
-			match.setTeamB(m.getTeamB());
-			match.setMatchDate(m.getMatchDate());
-			match.setVenue(m.getVenue());
-			match.setMatchType(m.getMatchType());
-			matches.add(match);
+		for (Match match : matchDao.getMatchesBySeriesId(seriesId)) {
+			matches.add(map(match));
 		}
 		return matches;
 	}
 
-	public MatchResponseDTO getMatchById(Long id) {
+	public MatchResponseDTO getMatchById(long matchId) {
+		Match match = matchDao.getMatchById(matchId);
+		return map(match);
+	}
+
+	public void deleteMatch(long matchId) {
+		int rows = matchDao.deleteMatch(matchId);
+
+		if (rows == 0) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
+		}
+	}
+
+	public void updateMatch(long matchId, MatchRequestDTO matchReq) {
+		Match match = new Match();
+		match.setId(matchId);
+		match.setTeamA(matchReq.getTeamA());
+		match.setTeamB(matchReq.getTeamB());
+		match.setMatchDate(matchReq.getMatchDate());
+		match.setVenue(matchReq.getVenue());
+		match.setMatchType(matchReq.getMatchType());
+
+		int rows = matchDao.updateMatch(matchId, match);
+
+		if (rows == 0) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
+		}
+	}
+
+	private SeriesResponseDTO map(Series series) {
+		SeriesResponseDTO seriesRsp = new SeriesResponseDTO();
+		seriesRsp.setId(series.getId());
+		seriesRsp.setName(series.getName());
+		seriesRsp.setLocation(series.getLocation());
+		seriesRsp.setStartDate(series.getStartDate());
+		seriesRsp.setEndDate(series.getEndDate());
+		return seriesRsp;
+	}
+
+	private MatchResponseDTO map(Match match) {
 		MatchResponseDTO matchDto = new MatchResponseDTO();
-		Match match = matchDao.getMatchById(id);
 		matchDto.setId(match.getId());
 		matchDto.setTeamA(match.getTeamA());
 		matchDto.setTeamB(match.getTeamB());
@@ -149,29 +173,5 @@ public class CricketService {
 		matchDto.setVenue(match.getVenue());
 		matchDto.setMatchType(match.getMatchType());
 		return matchDto;
-	}
-
-	public void deleteMatch(Long id) {
-		int rows = matchDao.deleteMatch(id);
-
-		if (rows == 0) {
-			throw new RuntimeException("Match not found");
-		}
-	}
-
-	public void updateMatch(Long id, MatchRequestDTO matchReq) {
-		Match match = new Match();
-		match.setId(id);
-		match.setTeamA(matchReq.getTeamA());
-		match.setTeamB(matchReq.getTeamB());
-		match.setMatchDate(matchReq.getMatchDate());
-		match.setVenue(matchReq.getVenue());
-		match.setMatchType(matchReq.getMatchType());
-
-		int rows = matchDao.updateMatch(id, match);
-
-		if (rows == 0) {
-			throw new RuntimeException("Match not found");
-		}
 	}
 }
