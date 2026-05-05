@@ -29,71 +29,64 @@ public class CricketController {
 	private CricketService service;
 
 	@PostMapping("/series")
-	public ResponseEntity<Map<String, String>> create(@RequestBody SeriesRequestDTO series) {
-		service.createSeries(series);
-		return ResponseEntity.ok(Map.of("message", "Series created successfully"));
+	public ResponseEntity<Map<String, Object>> create(@RequestBody SeriesRequestDTO series) {
+		long seriesId = service.createSeries(series);
+		return ResponseEntity.status(201).body(Map.of("message", "Series created", "seriesId", seriesId));
 	}
 
 	@GetMapping("/series")
-	public List<SeriesResponseDTO> getAllSeries() {
-		return service.getAllSeries();
+	public List<SeriesResponseDTO> getAllSeries(@RequestParam(defaultValue = "false") boolean includeMatches) {
+		return service.getAllSeries(includeMatches);
 	}
 
-	@GetMapping("/seriesWithMatches")
-	public List<SeriesResponseDTO> getAllSeriesWithMatches() {
-		return service.getAllSeriesWithMatches();
+	@GetMapping("/series/{seriesId}")
+	public SeriesResponseDTO getSeriesById(@PathVariable long seriesId,
+			@RequestParam(defaultValue = "false") boolean includeMatches) {
+		return service.getSeriesById(seriesId, includeMatches);
 	}
 
-	@GetMapping("/series/{id}")
-	public SeriesResponseDTO getSeriesById(@PathVariable Long id) {
-		return service.getSeriesById(id);
+	@DeleteMapping("/series/{seriesId}")
+	public ResponseEntity<Map<String, String>> deleteSeries(@PathVariable long seriesId) {
+		service.deleteSeries(seriesId);
+		return ResponseEntity.ok(Map.of("message", "Series " + seriesId + "  deleted successfully"));
 	}
 
-	@GetMapping("/seriesWithMatches/{id}")
-	public SeriesResponseDTO getSeriesByIdWithMatches(@PathVariable Long id) {
-		return service.getSeriesByIdWithMatches(id);
-	}
+	@PutMapping("/series/{seriesId}")
+	public ResponseEntity<Map<String, String>> update(@PathVariable long seriesId, @RequestBody SeriesRequestDTO dto) {
 
-	@DeleteMapping("/series")
-	public ResponseEntity<Map<String, String>> deleteSeries(@RequestParam Long id) {
-		service.deleteSeries(id);
-		return ResponseEntity.ok(Map.of("message", "Series deleted successfully"));
-	}
-
-	@PutMapping("/series/{id}")
-	public ResponseEntity<Map<String, String>> update(@PathVariable Long id, @RequestBody SeriesRequestDTO dto) {
-
-		service.updateSeries(id, dto);
+		service.updateSeries(seriesId, dto);
 
 		return ResponseEntity.ok(Map.of("message", "Series updated successfully"));
 	}
 
-	@PostMapping("/match/{id}")
-	public ResponseEntity<Map<String, String>> createMatch(@PathVariable Long id, @RequestBody MatchRequestDTO match) {
-		service.createMatch(id, match);
-		return ResponseEntity.ok(Map.of("message", "Match created successfully in series " + id));
+	@PostMapping("/series/{seriesId}/match")
+	public ResponseEntity<Map<String, String>> createMatch(@PathVariable long seriesId,
+			@RequestBody MatchRequestDTO match) {
+		service.createMatch(seriesId, match);
+		return ResponseEntity.status(201).body(Map.of("message", "Match created"));
 	}
 
-	@GetMapping("/matches/{id}")
-	public List<MatchResponseDTO> getAllMatchesBySeriesId(@PathVariable Long id) {
-		return service.getAllMatchesBySeriesId(id);
+	@GetMapping("/series/{seriesId}/match")
+	public List<MatchResponseDTO> getMatchesBySeriesId(@PathVariable long seriesId) {
+		return service.getMatchesBySeriesId(seriesId);
 	}
 
-	@GetMapping("/match/{id}")
-	public MatchResponseDTO getMatchById(@PathVariable Long id) {
-		return service.getMatchById(id);
+	@GetMapping("/match/{matchId}")
+	public MatchResponseDTO getMatchById(@PathVariable long matchId) {
+		return service.getMatchById(matchId);
 	}
 
-	@DeleteMapping("/match")
-	public ResponseEntity<Map<String, String>> deleteMatch(@RequestParam Long id) {
-		service.deleteMatch(id);
-		return ResponseEntity.ok(Map.of("message", "Match id " + id + " deleted successfully"));
+	@DeleteMapping("/match/{matchId}")
+	public ResponseEntity<Map<String, String>> deleteMatch(@PathVariable long matchId) {
+		service.deleteMatch(matchId);
+		return ResponseEntity.ok(Map.of("message", "Match id " + matchId + " deleted successfully"));
 	}
 
-	@PutMapping("/match/{id}")
-	public ResponseEntity<Map<String, String>> updateMatch(@PathVariable Long id, @RequestBody MatchRequestDTO match) {
-		service.updateMatch(id, match);
-		return ResponseEntity.ok(Map.of("message", "Match id " + id + " updated successfully"));
+	@PutMapping("/match/{matchId}")
+	public ResponseEntity<Map<String, String>> updateMatch(@PathVariable long matchId,
+			@RequestBody MatchRequestDTO match) {
+		service.updateMatch(matchId, match);
+		return ResponseEntity.ok(Map.of("message", "Match id " + matchId + " updated successfully"));
 	}
 
 }
