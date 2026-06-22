@@ -1,8 +1,8 @@
 # 🏏 Cricket Series Management API (Spring Boot + JDBC + PostgreSQL)
 ![Java](https://img.shields.io/badge/Java-17-orange)
-![Spring Boot](https://img.shields.io/badge/SpringBoot-3.x-brightgreen)
+![Spring Boot](https://img.shields.io/badge/SpringBoot-4.x-brightgreen)
 ![Database](https://img.shields.io/badge/Database-PostgreSQL-blue)
-![Deployed on Railway](https://img.shields.io/badge/Deployed-Railway-purple)
+![Deployed on Render](https://img.shields.io/badge/Deployed-Render-purple)
 
 A RESTful backend application built using Spring Boot that manages **cricket series and matches** using **pure JDBC (NamedParameterJdbcTemplate)** with a **PostgreSQL** database.
 
@@ -10,7 +10,7 @@ A RESTful backend application built using Spring Boot that manages **cricket ser
 
 ## 🌐 Live Demo
 
-🔗 https://cricketseriesmanagement-production.up.railway.app
+🔗 https://cricket-series-management.onrender.com
 
 Try:
 - `/cricket/series`
@@ -24,7 +24,7 @@ Try:
 * Create, Read, Update, Delete (CRUD) operations for Series & Matches
 * Add matches while creating a series (transactional)
 * Fetch series with or without matches using query parameter
-* Uses Spring JDBC - no ORM (no JPA/Hibernate)
+* Uses Spring JDBC and NamedParameterJdbcTemplate - no ORM (no JPA/Hibernate)
 * Manual SQL queries (strong SQL focus)
 * JSON aggregation for optimized queries (avoids N+1 problem)
 * Proper error handling with HTTP status responses
@@ -99,7 +99,7 @@ Update `application.properties`:
 spring.application.name=CricketSeriesManagement
 
 # port for server
-server.port=8088
+server.port=${PORT:8088}
 
 # Database configuration
 spring.datasource.url=jdbc:postgresql://${DB_HOST}/${DB_NAME}?sslmode=require
@@ -112,7 +112,7 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 
 ## ▶️ Running the Application
 
-Using Maven Wrapper:
+### Using Maven Wrapper:
 
 ```bash
 ./mvnw spring-boot:run
@@ -123,6 +123,21 @@ Or:
 ```bash
 mvn spring-boot:run
 ```
+
+### Using Docker:
+
+#### Build Docker Image
+
+```bash
+docker build -t cricket-series-management .
+```
+
+#### Run Docker Container
+
+```bash
+docker run -p 8088:8088 cricket-series-management
+```
+
 ---
 
 ## 🌐 API Endpoints
@@ -199,8 +214,10 @@ You can test APIs using:
 
 ## 🚀 Deployment
 
-* Backend hosted on Railway
-* Database hosted on PostgreSQL (Neon)
+* Containerized using Docker
+* Backend hosted on Render
+* Database hosted on Neon PostgreSQL
+* Environment-variable based configuration
 
 ---
 
