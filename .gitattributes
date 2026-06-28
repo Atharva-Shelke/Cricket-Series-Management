@@ -1,3 +1,4 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
-src/main/resources/sql/* linguist-vendored=false
+src/main/resources/sql/*.sql linguist-language=SQL
+src/main/resources/database/*.sql linguist-language=SQL
