@@ -10,12 +10,12 @@ A RESTful backend application built using Spring Boot that manages **cricket ser
 
 ## 🌐 Live Demo
 
-🔗 https://cricket-series-management.onrender.com
+🔗 https://cricket-series-management.onrender.com/health
 
 Try:
-- `/cricket/series`
-- `/cricket/series/{id}`
-- `/cricket/match/{id}`
+- `/cricket/series` : https://cricket-series-management.onrender.com/cricket/series?includeMatches=false
+- `/cricket/series/{id}` : https://cricket-series-management.onrender.com/cricket/series/6?includeMatches=true
+- `/cricket/match/{id}` : https://cricket-series-management.onrender.com/cricket/match/4
 
 ---
 
